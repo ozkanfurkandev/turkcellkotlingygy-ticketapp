@@ -1,58 +1,125 @@
 package com.turkcell.data.di
 
-import com.turkcell.core.domain.AuthRepository
+import com.turkcell.core.domain.auth.AuthRepository
+import com.turkcell.core.domain.event.EventRepository
+import com.turkcell.core.domain.ticket.TicketRepository
+import com.turkcell.data.local.TokenStore
+import com.turkcell.data.network.AuthInterceptor
+import com.turkcell.data.network.TokenAuthenticator
 import com.turkcell.data.remote.AuthApi
+import com.turkcell.data.remote.EventApi
+import com.turkcell.data.remote.TicketApi
 import com.turkcell.data.repository.AuthRepositoryImpl
+import com.turkcell.data.repository.EventRepositoryImpl
+import com.turkcell.data.repository.TicketRepositoryImpl
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
-// Koin'in nesneleri nasıl üreteceğini öğrendiği yer.
-// single  -> uygulama yaşam süresi boyunca tek instance (singleton)
-// factory -> her get() çağrısında yeni instance
-val dataModule = module {
+private const val BASE_URL = "https://tickets-api.halitkalayci.com/"
 
-    // JSON parser. Retrofit converter buradan beslenecek.
+// Named Dependencyler
+private val REFRESH_CLIENT = named("refresh_client")
+private val REFRESH_RETROFIT = named("refresh_retrofit")
+private val REFRESH_API = named("refresh_api")
+
+
+// Projede ihtiyaç duyulan her dependency için (data katmanı özelinde)
+// tanımlama burada yapılır.
+val dataModule = module {
     single {
         Json {
             ignoreUnknownKeys = true
+            explicitNulls = false
             isLenient = true
         }
     }
 
-    // İstek/yanıt loglarını Logcat'te görmek için interceptor.
     single {
         HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
     }
 
-    // OkHttp client. get() ile yukarıdaki HttpLoggingInterceptor'ı çekiyoruz.
+    single {
+        TokenStore(context=get())
+    }
+
+    single { AuthInterceptor(tokenStore = get()) }
+
+    single {
+        TokenAuthenticator(
+            tokenStore = get(),
+            refreshApiProvider = { get(REFRESH_API) }
+        )
+    }
+
+    // Refresh Stack
+    single(REFRESH_CLIENT) {
+        OkHttpClient.Builder().addInterceptor(get<HttpLoggingInterceptor>()).build()
+    }
+
+    single(REFRESH_RETROFIT)
+    {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(get(REFRESH_CLIENT))
+            .addConverterFactory(get<Json>().asConverterFactory("application/json".toMediaType()))
+            .build()
+    }
+
+    single(REFRESH_API)
+    {
+        // 3 tane varsa? Hangisini istediğini?
+        get<Retrofit>(REFRESH_RETROFIT).create(AuthApi::class.java)
+    }
+    // Refresh Stack
+
+
+    // HTTP isteklerini yönetmek..
     single {
         OkHttpClient.Builder()
+            .addInterceptor(get<AuthInterceptor>())
+            .authenticator(get<TokenAuthenticator>())
             .addInterceptor(get<HttpLoggingInterceptor>())
             .build()
     }
 
-    // Retrofit. Uzak (remote) Tickets API'si.
-    // Swagger: https://tickets-api.halitkalayci.com/docs/#/
     single {
-        val json = get<Json>()
         Retrofit.Builder()
-            .baseUrl("https://tickets-api.halitkalayci.com/")
-            .client(get())
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .baseUrl(BASE_URL)
+            .client(get<OkHttpClient>())
+            .addConverterFactory(get<Json>().asConverterFactory("application/json".toMediaType()))
             .build()
     }
-
-    // AuthApi'yi Retrofit'ten üretiyoruz.
-    single<AuthApi> { get<Retrofit>().create(AuthApi::class.java) }
-
-    // AuthRepositoryImpl'i, AuthRepository interface'ine bağlıyoruz.
-    // İstek geldiğinde AuthApi'yi otomatik olarak get() ile çözüp constructor'a verir.
-    single<AuthRepository> { AuthRepositoryImpl(get()) }
+    single {
+        get<Retrofit>().create(AuthApi::class.java)
+    }
+    single {
+        get<Retrofit>().create(EventApi::class.java)
+    }
+    single {
+        get<Retrofit>().create(TicketApi::class.java)
+    }
+    single<AuthRepository> {
+        AuthRepositoryImpl(
+            authApi = get(),
+            tokenStore = get()
+        )
+    }
+    single<EventRepository> {
+        EventRepositoryImpl(
+            eventApi = get()
+        )
+    }
+    single<TicketRepository> {
+        TicketRepositoryImpl(
+            ticketApi = get()
+        )
+    }
 }
