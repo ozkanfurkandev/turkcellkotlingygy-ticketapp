@@ -71,6 +71,7 @@ private val gradientPalette = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    onTicketClick: (String) -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -129,6 +130,7 @@ fun HomeScreen(
                         error = state.ticketsError,
                         tickets = state.tickets,
                         onRetry = viewModel::loadTickets,
+                        onTicketClick = onTicketClick,
                     )
                 }
             }
@@ -209,6 +211,7 @@ private fun TicketsTabContent(
     error: String?,
     tickets: List<UserTicket>,
     onRetry: () -> Unit,
+    onTicketClick: (String) -> Unit,
 ) {
     when {
         isLoading -> LoadingState(message = "Biletlerin yükleniyor...")
@@ -222,7 +225,10 @@ private fun TicketsTabContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(items = tickets, key = { it.id }) { ticket ->
-                ModernTicketCard(ticket = ticket)
+                ModernTicketCard(
+                    ticket = ticket,
+                    onClick = { onTicketClick(ticket.id) },
+                )
             }
         }
     }
@@ -338,8 +344,12 @@ private fun ModernEventCard(event: Event) {
 }
 
 @Composable
-private fun ModernTicketCard(ticket: UserTicket) {
+private fun ModernTicketCard(
+    ticket: UserTicket,
+    onClick: () -> Unit,
+) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

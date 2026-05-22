@@ -24,6 +24,7 @@ data class UserTicketTypeDto(
 data class UserTicketEventDto(
     val id: String,
     val name: String,
-    val venue: String,
+    val place: String? = null,
+    val venue: String? = null,
     val startsAt: String,
 )

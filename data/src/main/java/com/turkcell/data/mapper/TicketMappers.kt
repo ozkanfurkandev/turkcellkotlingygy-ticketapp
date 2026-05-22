@@ -13,6 +13,6 @@ internal fun UserTicketDto.toDomain(): UserTicket = UserTicket(
     priceCents = ticketType.priceCents,
     eventId = ticketType.event.id,
     eventName = ticketType.event.name,
-    venue = ticketType.event.venue,
+    venue = ticketType.event.place ?: ticketType.event.venue.orEmpty(),
     startsAt = ticketType.event.startsAt,
 )
