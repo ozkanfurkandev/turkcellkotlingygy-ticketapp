@@ -2,12 +2,12 @@ package com.turkcell.ticketapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.turkcell.core.domain.auth.AuthRepository
 import com.turkcell.core.domain.event.Event
 import com.turkcell.core.domain.event.EventRepository
 import com.turkcell.core.domain.ticket.TicketRepository
 import com.turkcell.core.domain.ticket.UserTicket
-import com.turkcell.data.network.ApiException
-import com.turkcell.data.network.NetworkException
+import com.turkcell.core.util.toUserMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,11 +27,13 @@ data class HomeUiState(
     val isTicketsLoading: Boolean = false,
     val tickets: List<UserTicket> = emptyList(),
     val ticketsError: String? = null,
+    val isLoggingOut: Boolean = false,
 )
 
 class HomeViewModel(
     private val eventRepository: EventRepository,
     private val ticketRepository: TicketRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
@@ -45,10 +47,24 @@ class HomeViewModel(
         _state.update { it.copy(selectedTab = tab) }
     }
 
+    fun openTicketsTab() {
+        _state.update { it.copy(selectedTab = HomeTab.Tickets) }
+        loadTickets(force = true)
+    }
+
     fun refreshCurrentTab() {
         when (_state.value.selectedTab) {
             HomeTab.Events -> loadEvents(force = true)
             HomeTab.Tickets -> loadTickets(force = true)
+        }
+    }
+
+    fun logout() {
+        if (_state.value.isLoggingOut) return
+        _state.update { it.copy(isLoggingOut = true) }
+        viewModelScope.launch {
+            authRepository.logout()
+            _state.update { it.copy(isLoggingOut = false) }
         }
     }
 
@@ -66,7 +82,7 @@ class HomeViewModel(
                 },
                 onFailure = { error ->
                     _state.update {
-                        it.copy(isEventsLoading = false, eventsError = error.toHomeErrorMessage())
+                        it.copy(isEventsLoading = false, eventsError = error.toUserMessage())
                     }
                 },
             )
@@ -87,20 +103,10 @@ class HomeViewModel(
                 },
                 onFailure = { error ->
                     _state.update {
-                        it.copy(isTicketsLoading = false, ticketsError = error.toHomeErrorMessage())
+                        it.copy(isTicketsLoading = false, ticketsError = error.toUserMessage())
                     }
                 },
             )
         }
     }
-}
-
-internal fun Throwable.toHomeErrorMessage(): String = when (this) {
-    is ApiException -> when (code) {
-        401 -> "Oturum süresi doldu, tekrar giriş yapın"
-        in 500..599 -> "Sunucu şu anda cevap veremiyor"
-        else -> "Beklenmeyen bir hata oluştu"
-    }
-    is NetworkException -> "İnternet bağlantısı yok"
-    else -> message ?: "Veriler yüklenemedi"
 }

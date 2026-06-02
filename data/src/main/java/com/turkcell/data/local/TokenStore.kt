@@ -17,18 +17,23 @@ class TokenStore(private val context: Context)
     private object Keys {
         val ACCESS = stringPreferencesKey("access_token")
         val REFRESH = stringPreferencesKey("refresh_token")
+        val USER_ROLE = stringPreferencesKey("user_role")
     }
+
+    val userRole: Flow<String?> = context.authDataStore.data.map { it[Keys.USER_ROLE] }
 
     // UI tarafından collect edilmek için
     val accessToken: Flow<String?> = context.authDataStore.data.map { it[Keys.ACCESS] }
     val refreshToken: Flow<String?> = context.authDataStore.data.map { it[Keys.REFRESH] }
 
 
-    suspend fun save(access:String, refresh: String) {
-        context.authDataStore.edit {
-            prefs ->
-                prefs[Keys.ACCESS] = access
-                prefs[Keys.REFRESH] = refresh
+    suspend fun save(access:String, refresh: String, role: String? = null) {
+        context.authDataStore.edit { prefs ->
+            prefs[Keys.ACCESS] = access
+            prefs[Keys.REFRESH] = refresh
+            if (role != null) {
+                prefs[Keys.USER_ROLE] = role
+            }
         }
     }
 
@@ -36,11 +41,13 @@ class TokenStore(private val context: Context)
         context.authDataStore.edit { prefs ->
             prefs.remove(Keys.ACCESS)
             prefs.remove(Keys.REFRESH)
+            prefs.remove(Keys.USER_ROLE)
         }
     }
 
     fun accessTokenBlocking(): String? = runBlocking { accessToken.first() }
     fun refreshTokenBlocking(): String? = runBlocking { refreshToken.first() }
-    fun saveBlocking(access: String, refresh: String) = runBlocking { save(access,refresh) }
+    fun saveBlocking(access: String, refresh: String, role: String? = null) =
+        runBlocking { save(access, refresh, role) }
     fun clearBlocking() = runBlocking { clear() }
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.turkcell.core.domain.ticket.TicketRepository
 import com.turkcell.core.domain.ticket.UserTicket
+import com.turkcell.core.util.toUserMessage
 import com.turkcell.ticketapp.navigation.TicketDetail
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,7 +45,7 @@ class TicketDetailViewModel(
                 },
                 onFailure = { error ->
                     _state.update {
-                        it.copy(isLoading = false, errorMessage = error.toHomeErrorMessage())
+                        it.copy(isLoading = false, errorMessage = error.toUserMessage())
                     }
                 },
             )

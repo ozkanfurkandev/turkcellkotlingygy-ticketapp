@@ -1,16 +1,15 @@
 package com.turkcell.ticketapp.viewmodel
 
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.core.domain.auth.AuthRepository
-import com.turkcell.data.network.ApiException
-import com.turkcell.data.network.NetworkException
+import com.turkcell.core.util.toRegisterMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
 
 data class RegisterUiState(
     val email: String = "",
@@ -21,15 +20,18 @@ data class RegisterUiState(
     val isRegistered: Boolean = false,
 ) {
     val passwordsMatch: Boolean get() = password == confirmPassword
+    val isEmailValid: Boolean
+        get() = email.isBlank() || Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val canSubmit: Boolean
         get() = email.isNotBlank() &&
+                isEmailValid &&
                 password.length in 8..128 &&
                 passwordsMatch &&
                 !isLoading
 }
 
 class RegisterViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RegisterUiState())
     val state: StateFlow<RegisterUiState> = _state.asStateFlow()
@@ -48,18 +50,9 @@ class RegisterViewModel(
         viewModelScope.launch {
             authRepository.register(current.email, current.password)
                 .onSuccess { _state.update { it.copy(isLoading = false, isRegistered = true) } }
-                .onFailure { error -> _state.update { it.copy(isLoading = false, errorMessage = error.toRegisterUserMessage()) } }
+                .onFailure { error ->
+                    _state.update { it.copy(isLoading = false, errorMessage = error.toRegisterMessage()) }
+                }
         }
     }
-}
-
-internal fun Throwable.toRegisterUserMessage(): String = when (this) {
-    is ApiException -> when (code) {
-        409 -> "Bu email zaten kayıtlı"
-        400 -> "Geçersiz email veya şifre formatı"
-        in 500..599 -> "Sunucu şu anda cevap veremiyor"
-        else -> "Beklenmeyen bir hata oluştu"
-    }
-    is NetworkException -> "İnternet bağlantısı yok"
-    else -> message ?: "Bilinmeyen bir hata oluştu."
 }

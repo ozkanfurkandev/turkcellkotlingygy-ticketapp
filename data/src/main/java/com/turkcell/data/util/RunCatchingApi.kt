@@ -1,7 +1,7 @@
 package com.turkcell.data.util
 
-import com.turkcell.data.network.ApiException
-import com.turkcell.data.network.NetworkException
+import com.turkcell.core.network.ApiException
+import com.turkcell.core.network.NetworkException
 import retrofit2.HttpException // 10 ay sonra garantisi yok..
 import java.io.IOException
 

@@ -29,12 +29,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +50,7 @@ import com.turkcell.core.ui.theme.SuccessGreen
 import com.turkcell.core.ui.theme.WarnAmber
 import com.turkcell.core.util.formatEventDate
 import com.turkcell.core.util.formatPriceCents
+import com.turkcell.ticketapp.R
 import com.turkcell.ticketapp.ui.QrCodeImage
 import com.turkcell.ticketapp.viewmodel.TicketDetailViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -57,16 +62,34 @@ fun TicketDetailScreen(
     viewModel: TicketDetailViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    DisposableEffect(Unit) {
+        val activity = context as? ComponentActivity
+        val window = activity?.window
+        val layoutParams = window?.attributes
+        val previousBrightness = layoutParams?.screenBrightness ?: -1f
+        if (layoutParams != null && window != null) {
+            layoutParams.screenBrightness = 1f
+            window.attributes = layoutParams
+        }
+        onDispose {
+            if (layoutParams != null && window != null) {
+                layoutParams.screenBrightness = previousBrightness
+                window.attributes = layoutParams
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bilet Detayı") },
+                title = { Text(stringResource(R.string.ticket_detail_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Geri",
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },

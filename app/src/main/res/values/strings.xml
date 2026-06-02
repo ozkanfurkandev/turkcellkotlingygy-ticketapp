@@ -1,3 +1,71 @@
 <resources>
     <string name="app_name">Ticket App</string>
+
+    <!-- Genel -->
+    <string name="back">Geri</string>
+    <string name="logout">Çıkış</string>
+    <string name="retry">Tekrar Dene</string>
+    <string name="cancel">İptal</string>
+    <string name="confirm">Onayla</string>
+    <string name="total">Toplam</string>
+    <string name="buy">Satın Al</string>
+
+    <!-- Login -->
+    <string name="login_title">Giriş Yap</string>
+    <string name="email">Email</string>
+    <string name="password">Şifre</string>
+    <string name="login_button">Giriş Yap</string>
+    <string name="navigate_register">Hesabın yok mu? Kayıt ol</string>
+
+    <!-- Register -->
+    <string name="register_title">Kayıt Ol</string>
+    <string name="password_confirm">Şifre (Tekrar)</string>
+    <string name="password_min_length">En az 8 karakter</string>
+    <string name="passwords_mismatch">Şifreler eşleşmiyor</string>
+    <string name="invalid_email">Geçerli bir e-posta adresi girin</string>
+    <string name="register_button">Kayıt Ol</string>
+    <string name="navigate_login">Zaten hesabın var mı? Giriş yap</string>
+
+    <!-- Home -->
+    <string name="home_title">TicketApp</string>
+    <string name="home_subtitle">Etkinlikleri keşfet, biletlerini yönet</string>
+    <string name="tab_events">Etkinlikler</string>
+    <string name="tab_tickets">Biletlerim</string>
+    <string name="tab_purchases">Satın Alımlarım</string>
+    <string name="loading_events">Etkinlikler yükleniyor…</string>
+    <string name="loading_tickets">Biletlerin yükleniyor…</string>
+    <string name="loading_purchases">Satın alımlar yükleniyor…</string>
+    <string name="empty_events_title">Yaklaşan etkinlik yok</string>
+    <string name="empty_events_subtitle">Yeni etkinlikler eklendiğinde burada görünecek.</string>
+    <string name="empty_tickets_title">Henüz biletin yok</string>
+    <string name="empty_tickets_subtitle">Bir etkinlikten bilet aldığında burada listelenecek.</string>
+    <string name="empty_purchases_title">Satın alım yok</string>
+    <string name="empty_purchases_subtitle">Bilet satın aldığında burada listelenecek.</string>
+    <string name="checkin">Check-in</string>
+
+    <!-- Event Detail -->
+    <string name="event_detail_title">Etkinlik Detayı</string>
+    <string name="ticket_types">Bilet Türleri</string>
+    <string name="remaining_capacity">%1$d / %2$d kaldı</string>
+    <string name="payment_confirm_title">Ödeme Onayı</string>
+    <string name="payment_confirm_message">Mock ödeme ile satın alımı tamamlamak istiyor musunuz?</string>
+
+    <!-- Ticket Detail -->
+    <string name="ticket_detail_title">Bilet Detayı</string>
+    <string name="qr_instruction">Kapıda bu QR kodu gösterin</string>
+
+    <!-- My Purchases -->
+    <string name="my_purchases_title">Satın Alımlarım</string>
+    <string name="purchase_status_pending">Beklemede</string>
+    <string name="purchase_status_paid">Ödendi</string>
+    <string name="continue_payment">Ödemeye devam et</string>
+
+    <!-- Check-in -->
+    <string name="checkin_title">Check-in</string>
+    <string name="checkin_scan_prompt">QR kodu taramak için butona basın</string>
+    <string name="checkin_scan_button">QR Tara</string>
+    <string name="checkin_success">Check-in başarılı</string>
+    <string name="checkin_ticket_used">Bu bilet kullanılmış</string>
+    <string name="checkin_not_assigned">Bu etkinliğe atanmamışsınız</string>
+    <string name="checkin_ticket_not_found">Bilet bulunamadı</string>
 </resources>

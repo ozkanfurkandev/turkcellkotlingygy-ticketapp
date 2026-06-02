@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,13 +37,22 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -56,6 +66,7 @@ import com.turkcell.core.util.formatEventDate
 import com.turkcell.core.util.formatEventDateShort
 import com.turkcell.core.util.formatPriceCents
 import com.turkcell.core.util.formatPriceRangeCents
+import com.turkcell.ticketapp.R
 import com.turkcell.ticketapp.viewmodel.HomeTab
 import com.turkcell.ticketapp.viewmodel.HomeViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -71,10 +82,21 @@ private val gradientPalette = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    onEventClick: (String) -> Unit,
     onTicketClick: (String) -> Unit,
+    onNavigateToPurchases: () -> Unit,
+    onNavigateToCheckin: () -> Unit,
+    showCheckin: Boolean = false,
+    openTicketsTab: Boolean = false,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(openTicketsTab) {
+        if (openTicketsTab) {
+            viewModel.openTicketsTab()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -82,12 +104,12 @@ fun HomeScreen(
                 title = {
                     Column {
                         Text(
-                            text = "TicketApp",
+                            text = stringResource(R.string.home_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "Etkinlikleri keşfet, biletlerini yönet",
+                            text = stringResource(R.string.home_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -96,6 +118,19 @@ fun HomeScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
+                actions = {
+                    IconButton(onClick = onNavigateToPurchases) {
+                        Icon(Icons.Default.Receipt, contentDescription = stringResource(R.string.tab_purchases))
+                    }
+                    if (showCheckin) {
+                        IconButton(onClick = onNavigateToCheckin) {
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.checkin))
+                        }
+                    }
+                    IconButton(onClick = viewModel::logout, enabled = !state.isLoggingOut) {
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = stringResource(R.string.logout))
+                    }
+                },
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -122,15 +157,20 @@ fun HomeScreen(
                         isLoading = state.isEventsLoading,
                         error = state.eventsError,
                         events = state.events,
-                        onRetry = viewModel::loadEvents,
+                        onRetry = { viewModel.loadEvents(force = true) },
+                        onEventClick = onEventClick,
+                        isRefreshing = state.isEventsLoading,
+                        onRefresh = { viewModel.loadEvents(force = true) },
                     )
 
                     HomeTab.Tickets -> TicketsTabContent(
                         isLoading = state.isTicketsLoading,
                         error = state.ticketsError,
                         tickets = state.tickets,
-                        onRetry = viewModel::loadTickets,
+                        onRetry = { viewModel.loadTickets(force = true) },
                         onTicketClick = onTicketClick,
+                        isRefreshing = state.isTicketsLoading,
+                        onRefresh = { viewModel.loadTickets(force = true) },
                     )
                 }
             }
@@ -146,8 +186,8 @@ private fun HomeTabRow(
     onTabSelected: (HomeTab) -> Unit,
 ) {
     val tabs = listOf(
-        HomeTab.Events to "Etkinlikler ($eventsCount)",
-        HomeTab.Tickets to "Biletlerim ($ticketsCount)",
+        HomeTab.Events to "${stringResource(R.string.tab_events)} ($eventsCount)",
+        HomeTab.Tickets to "${stringResource(R.string.tab_tickets)} ($ticketsCount)",
     )
 
     TabRow(
@@ -186,20 +226,29 @@ private fun EventsTabContent(
     error: String?,
     events: List<Event>,
     onRetry: () -> Unit,
+    onEventClick: (String) -> Unit,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
 ) {
-    when {
-        isLoading -> LoadingState(message = "Etkinlikler yükleniyor...")
-        error != null -> ErrorState(message = error, onRetry = onRetry)
-        events.isEmpty() -> EmptyState(
-            title = "Yaklaşan etkinlik yok",
-            subtitle = "Yeni etkinlikler eklendiğinde burada görünecek.",
-        )
-        else -> LazyColumn(
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            items(items = events, key = { it.id }) { event ->
-                ModernEventCard(event = event)
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        when {
+            isLoading && events.isEmpty() -> LoadingState(message = stringResource(R.string.loading_events))
+            error != null && events.isEmpty() -> ErrorState(message = error, onRetry = onRetry)
+            events.isEmpty() -> EmptyState(
+                title = stringResource(R.string.empty_events_title),
+                subtitle = stringResource(R.string.empty_events_subtitle),
+            )
+            else -> LazyColumn(
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                items(items = events, key = { it.id }) { event ->
+                    ModernEventCard(event = event, onClick = { onEventClick(event.id) })
+                }
             }
         }
     }
@@ -212,13 +261,20 @@ private fun TicketsTabContent(
     tickets: List<UserTicket>,
     onRetry: () -> Unit,
     onTicketClick: (String) -> Unit,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
 ) {
-    when {
-        isLoading -> LoadingState(message = "Biletlerin yükleniyor...")
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        when {
+        isLoading -> LoadingState(message = stringResource(R.string.loading_tickets))
         error != null -> ErrorState(message = error, onRetry = onRetry)
         tickets.isEmpty() -> EmptyState(
-            title = "Henüz biletin yok",
-            subtitle = "Bir etkinlikten bilet aldığında burada listelenecek.",
+            title = stringResource(R.string.empty_tickets_title),
+            subtitle = stringResource(R.string.empty_tickets_subtitle),
         )
         else -> LazyColumn(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
@@ -231,18 +287,24 @@ private fun TicketsTabContent(
                 )
             }
         }
+        }
     }
 }
 
 @Composable
-private fun ModernEventCard(event: Event) {
+private fun ModernEventCard(
+    event: Event,
+    onClick: () -> Unit,
+) {
     val prices = event.ticketTypes.map { it.priceCents }
     val minPrice = prices.minOrNull()
     val maxPrice = prices.maxOrNull()
     val totalRemaining = event.ticketTypes.sumOf { it.remaining }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
