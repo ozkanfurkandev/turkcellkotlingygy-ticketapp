@@ -27,8 +27,12 @@ class AuthRepositoryImpl(
         password: String,
     ): Result<AuthSession> = runCatchingApi {
         authApi.login(CredentialsDto(email = email, password = password))
-    }.onSuccess {
-        tokenStore.save(it.accessToken, it.refreshToken, it.user.role)
+    }.onSuccess { tokenPair ->
+        tokenStore.save(
+            access = tokenPair.accessToken,
+            refresh = tokenPair.refreshToken,
+            role = tokenPair.user.role,
+        )
     }.map { tokenPairDto ->
         AuthSession(
             user = User(
@@ -46,8 +50,12 @@ class AuthRepositoryImpl(
         password: String,
     ): Result<AuthSession> = runCatchingApi {
         authApi.register(CredentialsDto(email = email, password = password))
-    }.onSuccess {
-        tokenStore.save(it.accessToken, it.refreshToken, it.user.role)
+    }.onSuccess { tokenPair ->
+        tokenStore.save(
+            access = tokenPair.accessToken,
+            refresh = tokenPair.refreshToken,
+            role = tokenPair.user.role,
+        )
     }.map { tokenPairDto ->
         AuthSession(
             user = User(

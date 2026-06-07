@@ -15,12 +15,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.turkcell.core.domain.auth.AuthRepository
 import com.turkcell.core.domain.auth.UserRole
-import com.turkcell.ticketapp.screen.CheckinScreen
 import com.turkcell.ticketapp.screen.EventDetailScreen
 import com.turkcell.ticketapp.screen.HomeScreen
 import com.turkcell.ticketapp.screen.LoginScreen
 import com.turkcell.ticketapp.screen.MyPurchasesScreen
 import com.turkcell.ticketapp.screen.RegisterScreen
+import com.turkcell.ticketapp.screen.StaffScreen
 import com.turkcell.ticketapp.screen.TicketDetailScreen
 import org.koin.compose.koinInject
 
@@ -33,7 +33,7 @@ fun AppNavHost(
 
     when (isLoggedIn) {
         null -> SplashScreen()
-        true -> AuthedNavHost(navController)
+        true -> AuthedNavHost(navController, authRepository)
         false -> UnAuthedNavHost(navController)
     }
 }
@@ -46,11 +46,38 @@ private fun SplashScreen() {
 }
 
 @Composable
-private fun AuthedNavHost(navController: NavHostController) {
-    val authRepository: AuthRepository = koinInject()
+private fun AuthedNavHost(
+    navController: NavHostController,
+    authRepository: AuthRepository,
+) {
     val userRole by authRepository.userRole.collectAsStateWithLifecycle(initialValue = null)
-    val canCheckin = userRole == UserRole.STAFF || userRole == UserRole.ADMIN
 
+    if (userRole == null) {
+        SplashScreen()
+        return
+    }
+
+    when (userRole!!) {
+        UserRole.STAFF -> StaffNavHost(navController)
+        UserRole.USER -> CustomerNavHost(navController, showStaffEntry = false)
+        UserRole.ADMIN -> CustomerNavHost(navController, showStaffEntry = true)
+    }
+}
+
+@Composable
+private fun StaffNavHost(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = Staff) {
+        composable<Staff> {
+            StaffScreen()
+        }
+    }
+}
+
+@Composable
+private fun CustomerNavHost(
+    navController: NavHostController,
+    showStaffEntry: Boolean,
+) {
     NavHost(navController = navController, startDestination = Home) {
         composable<Home> { entry ->
             val openTicketsTab by entry.savedStateHandle
@@ -71,8 +98,8 @@ private fun AuthedNavHost(navController: NavHostController) {
                     navController.navigate(TicketDetail(ticketId = ticketId))
                 },
                 onNavigateToPurchases = { navController.navigate(MyPurchases) },
-                onNavigateToCheckin = { navController.navigate(Checkin) },
-                showCheckin = canCheckin,
+                onNavigateToStaff = { navController.navigate(Staff) },
+                showStaffEntry = showStaffEntry,
                 openTicketsTab = openTicketsTab,
             )
         }
@@ -93,8 +120,8 @@ private fun AuthedNavHost(navController: NavHostController) {
         composable<MyPurchases> {
             MyPurchasesScreen(onBack = { navController.popBackStack() })
         }
-        composable<Checkin> {
-            CheckinScreen(onBack = { navController.popBackStack() })
+        composable<Staff> {
+            StaffScreen()
         }
     }
 }

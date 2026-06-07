@@ -2,22 +2,15 @@ package com.turkcell.data.util
 
 import com.turkcell.core.network.ApiException
 import com.turkcell.core.network.NetworkException
-import retrofit2.HttpException // 10 ay sonra garantisi yok..
+import retrofit2.HttpException
 import java.io.IOException
 
-// Todo: İlerde tekrar konuşalım.
 suspend inline fun <T> runCatchingApi(crossinline block: suspend () -> T): Result<T> = try {
     Result.success(block())
-} catch(e: HttpException) // HttpException
-{
-    Result.failure(ApiException(code = e.code(), errorMessage = e.message(), cause=e))
-} catch(e: IOException)
-{
+} catch (e: HttpException) {
+    Result.failure(ApiException(code = e.code(), errorMessage = e.message(), cause = e))
+} catch (e: IOException) {
     Result.failure(NetworkException(e))
-} catch(e: Exception)
-{
+} catch (e: Exception) {
     Result.failure(e)
 }
-
-// 1- Bir ekranda koin ile (araştır) authRepository'i kullanmaya çalışalım. (Giriş ekranı)
-// backende istek at, cevabı ekrana yazmana gerek yok.

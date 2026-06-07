@@ -2,6 +2,7 @@ package com.turkcell.ticketapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.turkcell.core.domain.auth.AuthRepository
 import com.turkcell.core.domain.checkin.CheckinRepository
 import com.turkcell.core.domain.checkin.CheckinResult
 import com.turkcell.core.domain.event.Event
@@ -13,20 +14,23 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class CheckinUiState(
+data class StaffScreenUiState(
     val isLoadingEvents: Boolean = false,
     val events: List<Event> = emptyList(),
     val eventsError: String? = null,
     val isScanning: Boolean = false,
+    val isLoggingOut: Boolean = false,
     val lastResult: CheckinResult? = null,
     val scanError: String? = null,
+    val permissionMessage: String? = null,
 )
 
-class CheckinViewModel(
+class StaffScreenViewModel(
     private val checkinRepository: CheckinRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(CheckinUiState())
-    val state: StateFlow<CheckinUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(StaffScreenUiState())
+    val state: StateFlow<StaffScreenUiState> = _state.asStateFlow()
 
     init {
         loadEvents()
@@ -53,11 +57,13 @@ class CheckinViewModel(
     }
 
     fun onScanStarted() {
-        _state.update { it.copy(isScanning = true, scanError = null, lastResult = null) }
+        _state.update {
+            it.copy(isScanning = true, scanError = null, lastResult = null, permissionMessage = null)
+        }
     }
 
     fun onQrScanned(qrCode: String) {
-        _state.update { it.copy(isScanning = true, scanError = null) }
+        _state.update { it.copy(isScanning = true, scanError = null, permissionMessage = null) }
 
         viewModelScope.launch {
             checkinRepository.scan(qrCode).fold(
@@ -79,7 +85,30 @@ class CheckinViewModel(
         _state.update { it.copy(isScanning = false) }
     }
 
+    fun onCameraPermissionDenied(message: String) {
+        _state.update {
+            it.copy(isScanning = false, permissionMessage = message)
+        }
+    }
+
+    fun onGallerySelectionCancelled(message: String) {
+        _state.update { it.copy(permissionMessage = message) }
+    }
+
+    fun onGalleryQrNotFound(message: String) {
+        _state.update { it.copy(permissionMessage = message) }
+    }
+
     fun clearResult() {
         _state.update { it.copy(lastResult = null, scanError = null) }
+    }
+
+    fun logout() {
+        if (_state.value.isLoggingOut) return
+        _state.update { it.copy(isLoggingOut = true) }
+        viewModelScope.launch {
+            authRepository.logout()
+            _state.update { it.copy(isLoggingOut = false) }
+        }
     }
 }

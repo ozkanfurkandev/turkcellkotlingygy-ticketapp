@@ -31,7 +31,6 @@ import com.turkcell.ticketapp.R
 import com.turkcell.ticketapp.viewmodel.LoginViewModel
 import org.koin.androidx.compose.koinViewModel
 
-// RegisterScreen'i geliştirelim..
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = koinViewModel(),

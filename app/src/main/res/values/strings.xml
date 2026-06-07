@@ -41,7 +41,7 @@
     <string name="empty_tickets_subtitle">Bir etkinlikten bilet aldığında burada listelenecek.</string>
     <string name="empty_purchases_title">Satın alım yok</string>
     <string name="empty_purchases_subtitle">Bilet satın aldığında burada listelenecek.</string>
-    <string name="checkin">Check-in</string>
+    <string name="staff_checkin">Görevli Check-in</string>
 
     <!-- Event Detail -->
     <string name="event_detail_title">Etkinlik Detayı</string>
@@ -60,10 +60,17 @@
     <string name="purchase_status_paid">Ödendi</string>
     <string name="continue_payment">Ödemeye devam et</string>
 
-    <!-- Check-in -->
-    <string name="checkin_title">Check-in</string>
-    <string name="checkin_scan_prompt">QR kodu taramak için butona basın</string>
-    <string name="checkin_scan_button">QR Tara</string>
+    <!-- Staff -->
+    <string name="staff_screen_title">Görevli Ekranı - QR Check-in</string>
+    <string name="staff_scan_prompt">QR kodu çerçeveye getirin</string>
+    <string name="staff_scan_camera">QR Kodu Oku</string>
+    <string name="staff_scan_gallery">QR Kodu Oku - Galeri</string>
+    <string name="staff_assigned_events">Atandığınız etkinlikler</string>
+    <string name="staff_camera_permission_denied">Kamera izni verilmedi. QR okumak için ayarlardan izin verin.</string>
+    <string name="staff_gallery_cancelled">Galeri seçimi iptal edildi.</string>
+    <string name="staff_gallery_qr_not_found">Görselde QR kodu bulunamadı. Başka bir görsel deneyin.</string>
+
+    <!-- Check-in sonuç -->
     <string name="checkin_success">Check-in başarılı</string>
     <string name="checkin_ticket_used">Bu bilet kullanılmış</string>
     <string name="checkin_not_assigned">Bu etkinliğe atanmamışsınız</string>

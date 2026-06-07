@@ -27,13 +27,18 @@ class TokenStore(private val context: Context)
     val refreshToken: Flow<String?> = context.authDataStore.data.map { it[Keys.REFRESH] }
 
 
-    suspend fun save(access:String, refresh: String, role: String? = null) {
+    suspend fun saveTokens(access: String, refresh: String) {
         context.authDataStore.edit { prefs ->
             prefs[Keys.ACCESS] = access
             prefs[Keys.REFRESH] = refresh
-            if (role != null) {
-                prefs[Keys.USER_ROLE] = role
-            }
+        }
+    }
+
+    suspend fun save(access: String, refresh: String, role: String) {
+        context.authDataStore.edit { prefs ->
+            prefs[Keys.ACCESS] = access
+            prefs[Keys.REFRESH] = refresh
+            prefs[Keys.USER_ROLE] = role
         }
     }
 
@@ -47,7 +52,8 @@ class TokenStore(private val context: Context)
 
     fun accessTokenBlocking(): String? = runBlocking { accessToken.first() }
     fun refreshTokenBlocking(): String? = runBlocking { refreshToken.first() }
-    fun saveBlocking(access: String, refresh: String, role: String? = null) =
+    fun saveTokensBlocking(access: String, refresh: String) = runBlocking { saveTokens(access, refresh) }
+    fun saveBlocking(access: String, refresh: String, role: String) =
         runBlocking { save(access, refresh, role) }
     fun clearBlocking() = runBlocking { clear() }
 }

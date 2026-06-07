@@ -11,7 +11,7 @@ object Home
 @Serializable
 object MyPurchases
 @Serializable
-object Checkin
+object Staff
 @Serializable
 data class EventDetail(val id: String)
 @Serializable

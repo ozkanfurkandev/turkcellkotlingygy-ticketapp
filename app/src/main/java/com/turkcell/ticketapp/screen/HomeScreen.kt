@@ -30,10 +30,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -85,8 +83,8 @@ fun HomeScreen(
     onEventClick: (String) -> Unit,
     onTicketClick: (String) -> Unit,
     onNavigateToPurchases: () -> Unit,
-    onNavigateToCheckin: () -> Unit,
-    showCheckin: Boolean = false,
+    onNavigateToStaff: () -> Unit,
+    showStaffEntry: Boolean = false,
     openTicketsTab: Boolean = false,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -122,9 +120,12 @@ fun HomeScreen(
                     IconButton(onClick = onNavigateToPurchases) {
                         Icon(Icons.Default.Receipt, contentDescription = stringResource(R.string.tab_purchases))
                     }
-                    if (showCheckin) {
-                        IconButton(onClick = onNavigateToCheckin) {
-                            Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.checkin))
+                    if (showStaffEntry) {
+                        IconButton(onClick = onNavigateToStaff) {
+                            Icon(
+                                Icons.Default.QrCodeScanner,
+                                contentDescription = stringResource(R.string.staff_checkin),
+                            )
                         }
                     }
                     IconButton(onClick = viewModel::logout, enabled = !state.isLoggingOut) {
@@ -190,20 +191,10 @@ private fun HomeTabRow(
         HomeTab.Tickets to "${stringResource(R.string.tab_tickets)} ($ticketsCount)",
     )
 
-    TabRow(
+    PrimaryTabRow(
         selectedTabIndex = selectedTab.ordinal,
         containerColor = MaterialTheme.colorScheme.background,
         contentColor = MaterialTheme.colorScheme.primary,
-        indicator = { tabPositions ->
-            if (selectedTab.ordinal < tabPositions.size) {
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab.ordinal]),
-                    height = 3.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-        },
-        divider = {},
     ) {
         tabs.forEach { (tab, label) ->
             Tab(

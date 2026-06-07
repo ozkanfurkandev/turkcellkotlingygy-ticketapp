@@ -65,19 +65,17 @@ fun TicketDetailScreen(
     val context = LocalContext.current
 
     DisposableEffect(Unit) {
-        val activity = context as? ComponentActivity
-        val window = activity?.window
-        val layoutParams = window?.attributes
-        val previousBrightness = layoutParams?.screenBrightness ?: -1f
-        if (layoutParams != null && window != null) {
-            layoutParams.screenBrightness = 1f
-            window.attributes = layoutParams
+        val window = (context as? ComponentActivity)?.window
+        if (window == null) {
+            return@DisposableEffect onDispose { }
         }
+        val layoutParams = window.attributes
+        val previousBrightness = layoutParams.screenBrightness
+        layoutParams.screenBrightness = 1f
+        window.attributes = layoutParams
         onDispose {
-            if (layoutParams != null && window != null) {
-                layoutParams.screenBrightness = previousBrightness
-                window.attributes = layoutParams
-            }
+            layoutParams.screenBrightness = previousBrightness
+            window.attributes = layoutParams
         }
     }
 

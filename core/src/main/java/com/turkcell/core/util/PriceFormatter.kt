@@ -3,7 +3,7 @@ package com.turkcell.core.util
 import java.text.NumberFormat
 import java.util.Locale
 
-private val turkishCurrencyFormat = NumberFormat.getCurrencyInstance(Locale("tr", "TR"))
+private val turkishCurrencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("tr-TR"))
 
 fun formatPriceCents(cents: Long): String {
     val amount = cents / 100.0

@@ -37,7 +37,7 @@ class TokenAuthenticator(
                 return@synchronized null
             }
 
-            tokenStore.saveBlocking(newPair.accessToken, newPair.refreshToken)
+            tokenStore.saveTokensBlocking(newPair.accessToken, newPair.refreshToken)
             response.request.signWith(newPair.accessToken)
         }
     }
@@ -55,7 +55,3 @@ class TokenAuthenticator(
         return count
     }
 }
-
-// Ana sayfada
-// etkinlikler ve "biletlerim" diye 2 tane tasarım
-// apiden etkinlikleri ve biletleri çekip gösterecek..
